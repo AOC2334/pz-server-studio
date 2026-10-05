@@ -1,0 +1,8 @@
+const fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict');
+async function main(){const record=JSON.parse(await fs.readFile(path.join(__dirname,'../data/project-verification.json'),'utf8'));const root=path.resolve(record.root);assert.equal(root.toLowerCase(),path.join(os.homedir(),'Zomboid/Server').toLowerCase());assert.match(record.name,/^pzstudio_verify_\d+$/);
+ const names=[record.name,record.copy,record.name+'_ui_restored'];assert.ok(names.every(n=>n===record.name||n.startsWith(record.name+'_')));
+ const actualLua=await fs.readFile(path.join(root,record.name+'_SandboxVars.lua'),'utf8');assert.match(actualLua,/DayLength = 3/);assert.doesNotMatch(actualLua,/browser draft/);console.log('Unapplied editor draft did not overwrite game Lua.');
+ for(const name of names)for(const suffix of ['.ini','_SandboxVars.lua','_spawnregions.lua','_spawnpoints.lua','.pzstudio.json']){const target=path.resolve(root,name+suffix);assert.equal(path.dirname(target).toLowerCase(),root.toLowerCase());await fs.rm(target,{force:true});}
+ for(const kind of ['backups','trash']){const base=path.resolve(root,'.pzstudio',kind);let ids=[];try{ids=await fs.readdir(base);}catch{}for(const id of ids){if(!/^\d+-[\da-f-]{36}$/.test(id))continue;const dir=path.resolve(base,id);assert.equal(path.dirname(dir),base);let metadata;try{metadata=JSON.parse(await fs.readFile(path.join(dir,'record.json'),'utf8'));}catch{continue;}if(metadata.name===record.name||metadata.name.startsWith(record.name+'_'))await fs.rm(dir,{recursive:true});}}
+ console.log('Only isolated verification files and their history were removed. Original configurations untouched.');}
+main().catch(e=>{console.error(e);process.exitCode=1;});

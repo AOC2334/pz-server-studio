@@ -1,0 +1,16 @@
+output/
+data/
+test-output/
+# Local tools, diagnostics and private server progress
+.tools/
+node_modules/
+.env
+.env.*
+*.log
+*.tmp
+*.pzstudio.json
+*.building/
+.pzstudio/
+# One-off repairs tied to local exported servers
+scripts/repair-apple-mods.js
+scripts/probe-ipv6.js
