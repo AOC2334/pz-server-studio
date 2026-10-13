@@ -1,6 +1,6 @@
 # PZ Server Studio
 
-Windows 本地可视化服务器制作工具，第一阶段实现。使用 Node.js 20+，不需要 npm install，不连接外部服务。
+Windows 本地可视化服务器制作工具。第一阶段已归档，第二阶段接入创意工坊详情、下载与更新。使用 Node.js 24.5+，不需要 npm install；在线功能需要连接 Steam。
 
 ## 启动
 
@@ -17,11 +17,19 @@ IPv6 局域网测试优先使用 ULA 或全球单播地址；`fe80::` 链路本�
 3. 编辑常用及全部 INI 字段，沙盒标量字段和 Lua 原文。修改原文后点击“应用编辑内容”，否则该原文修改不进入构建。Lua 不执行；复杂表达式使用原文编辑器。地图出生区域可用原文编辑器配置。
 4. 保存项目或一键构建并测试。构建复制 Dedicated Server/JRE/模组，输出独立目录 `output/<配置名>-<时间戳>`（运行环境仅使用 Steam 工具里的 Project Zomboid Dedicated Server，AppID 380870）。打开目录双击 `启动服务器.cmd`，按提示创建管理员密码。构建期间不修改源文件，不携带现有存档。构建后自动运行隔离启动测试，界面显示阶段、实时日志和最终报告；可停止测试，包会保留。完整结果在包的 `diagnostics/smoke.log` 和 `diagnostics/smoke-report.json`。
 
-包是可移动文件夹，整体复制即可；当前不生成压缩 ZIP 或单文件 EXE。Steam 模式仍可能联网验证/更新工坊，不能保证完全离线。实际运行还受版本一致性、模组脚本、Steam 服务以及网络影响。应用不会自动修改防火墙或路由器。配置密码明文保存于本地项目及服务器 INI，请妥善保管。
+包是可移动文件夹，整体复制即可；当前不生成压缩 ZIP 或单文件 EXE。模组启动时使用包内文件，Steam 身份验证仍可能联网。实际运行还受版本一致性、模组脚本、Steam 服务以及网络影响。应用不会自动修改防火墙或路由器。配置密码明文保存于本地项目及服务器 INI，请妥善保管。
 
 ## 工作台与沙盒补充功能
 
-工作台采用紧凑卡片：图标、名称和兼容提示一行，简要元数据一行，来源路径仅在选择框显示，说明/版本范围/依赖折叠。“手动刷新”保留启用列表、加载顺序和当前设置。卡片显示分类、作者、模组版本、游戏版本范围与兼容提示；分类标明作者声明或目录推断。可手填目标游戏版本，未声明信息不会被推断为兼容。工坊模组支持打开条目页面；在线最新版本检查、单项更新和更新全部的交互计划见 [阶段计划](docs/PLAN.md)。
+构建服务器包现在先通过 SteamCMD 下载、校验所有已启用的工坊条目，并用真实安装记录比对远端更新时间；新增前置也会纳入核验。无法联网、下载失败、无法确认最新版或新版移除已启用 Mod ID 时停止构建。模组最终只复制到包内 `Zomboid/mods`，不再重复复制工坊缓存。导出 INI 的 `WorkshopItems` 留空、`Mods` 保留，启动脚本继续指定包内缓存和 `-modfolders mods`，因此启动不再下载工坊模组。工坊编号与版本核验时间保存在 `manifest.json`。客户端需要自行订阅这些条目并保持相同版本；Steam 身份验证仍可能联网。本地模组没有可核验的工坊版本，按当前文件复制。旧包需重新构建才能包含新行为。
+
+“创意工坊 · 下载与任务”内可粘贴 Steam 合集链接，点击“一键合并合集”。自动展开嵌套合集并去重，保留当前启用模组与相对顺序，补入合集条目中的所有内部 Mod ID 及已安装前置。缺失条目自动安装 SteamCMD（如有需要）、下载并启用；失败 / 取消的条目保留待合并状态，可重试。未完成状态随保存项目一起保留。不可见、已删除或其他游戏条目会明确提示跳过；新增模组仍需核对游戏分支、可选补丁和兼容性后构建测试。合集最多 500 个模组条目、8 层嵌套。编辑服务器包时，缺少包内文件的合集需先在本机配置合并，再重新构建。
+
+“文件与环境”新增已有服务器包列表，自动扫描 output，也可填写本应用生成的服务器包根目录。选择“加载编辑”后，在工作台与设置页修改，顶部按钮变为“保存服务器包配置”，写回该包的 INI / Lua 和内存启动参数，并保留备份。只允许启用包内已经存在的模组；加入新模组需重新构建。存档不参与配置保存，更改下次启动生效。
+
+配置列表的“加载配置”现在同时恢复游戏配置和已保存工作台进度。实际 INI / Lua 优先于快照，路径变化后按 Mod ID / 工坊身份重新匹配；未找到的模组保留提示。工作台草稿仍需“应用编辑内容”才进入实际游戏配置。保存清空已有模组清单或覆盖未加载的同名配置时会提示确认，旧文件自动备份。
+
+工作台采用紧凑卡片：图标、名称和兼容提示一行，简要元数据一行，来源路径仅在选择框显示，说明/版本范围/依赖折叠。“手动刷新”保留启用列表、加载顺序和当前设置。卡片显示分类、作者、模组版本、游戏版本范围与兼容提示；分类标明作者声明或目录推断。可手填目标游戏版本，未声明信息不会被推断为兼容。工坊模组支持打开条目页面、在线详情、版本检查以及单项 / 全部更新。下载队列、独立缓存、登录方式和当前验收范围见 [第二阶段说明](docs/PHASE2.md)。
 
 服务器配置新增全部沙盒面板：读取所选 Dedicated Server 的 Apocalypse 默认数据，以及已启用模组的 `media/sandbox-options.txt` 和 common 共享定义；保留导入配置的附加字段。按组展开、搜索，支持布尔、枚举、字符串、整数和小数。修改立即写入 SandboxVars，未写入的模组选项显示默认值。复杂动态 Lua 保留在原文编辑器。读取数据不执行 Lua。
 
@@ -61,7 +69,7 @@ APPLE 的原始日志明确记录 SkillRecoveryJournal、SkillRecoveryJournalCN�
 
 - 启动服务器.cmd：调用 runtime/StartServer64.bat，传递 -cachedir、-servername、-modfolders；它选定数据根目录与配置名。双击 runtime/StartServer64.bat 绕过外层参数可能回到默认用户目录，应使用包根目录脚本。
 - runtime/StartServer64.bat：启动 JVM 与 zombie.network.GameServer，传递内存、类路径、Steam 模式、外层参数。
-- Zomboid/Server/APPLE.ini：由 ServerOptions.loadServerTextFile 读取。Mods 是游戏 Mod ID 启用清单；WorkshopItems 是 Steam 工坊项目数字 ID 下载清单，二者不能互相替代。DefaultPort/UDPPort 是游戏 UDP 端口，Map 是地图加载清单；密码等其他服务器选项也在此文件。
+- Zomboid/Server/APPLE.ini：由 ServerOptions.loadServerTextFile 读取。Mods 是游戏 Mod ID 启用清单；WorkshopItems 是 Steam 工坊项目数字 ID 下载清单，二者不能互相替代。新版导出包为避免启动下载将其留空，工坊身份记录于 manifest.json。DefaultPort/UDPPort 是游戏 UDP 端口，Map 是地图加载清单；密码等其他服务器选项也在此文件。
 - Zomboid/Server/APPLE_SandboxVars.lua：由 SandboxOptions.loadServerLuaFile 执行并读取 SandboxVars 表，包含原版及已加载模组注册的沙盒选项。模组未加载时，该模组字段会报 unknown SandboxOption。已有存档还会保存沙盒数据，改此文件不等于全部已生成世界内容会重新生成。
 - Zomboid/Server/APPLE_spawnregions.lua：由 SpawnRegions/ServerSettings 读取，返回 SpawnRegions() 区域清单，区域引用地图内 spawnpoints 或自定义 serverfile。
 - Zomboid/Server/APPLE_spawnpoints.lua：由 SpawnRegions/ServerSettings 读取 SpawnPoints()。仅有文件不保证采用，必须被出生区域配置引用；不是玩家当前位置或存档数据。

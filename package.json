@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "node server.js",
+    "start": "node --use-env-proxy server.js",
     "test": "node --test"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24.5"
   },
   "description": "Windows Project Zomboid Dedicated Server configuration and portable package studio"
 }

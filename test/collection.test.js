@@ -1,0 +1,13 @@
+const test=require('node:test'),assert=require('node:assert/strict'),{collection}=require('../lib/workshop'),{merge}=require('../public/collection-model');
+test('Steam collections recursively flatten ordered entries, deduplicate cycles, skip wrong-game items',async()=>{
+ const children={'1':['10','2','11','10'],'2':['11','1','12','13']},types={'1':2,'2':2};const fetcher=async(url,{body})=>({ok:true,json:async()=>url.includes('GetCollectionDetails')?{response:{collectiondetails:[{publishedfileid:body.get('publishedfileids[0]'),result:1,children:children[body.get('publishedfileids[0]')].map((id,i)=>({publishedfileid:id,sortorder:i}))}]}}:{response:{publishedfiledetails:Array.from({length:Number(body.get('itemcount'))},(_,i)=>{const id=body.get(`publishedfileids[${i}]`);return {publishedfileid:id,result:1,consumer_app_id:id==='13'?123:108600,file_type:types[id]||0,title:id};})}}});
+ const result=await collection('1',fetcher);assert.deepEqual(result.items.map(m=>m.id),['10','11','12']);assert.equal(result.collections,2);assert.equal(result.warnings.length,1);await assert.rejects(collection('10',fetcher),/合集链接/);
+});
+test('collection lookup failure never returns a misleading partial success',async()=>{await assert.rejects(collection('1',async(url)=>url.includes('GetCollectionDetails')?{ok:false,status:503}:{ok:true,json:async()=>({response:{publishedfiledetails:[{publishedfileid:'1',result:1,consumer_app_id:108600,file_type:2}]}})}),/503/);});
+const mod=(key,id,workshopId,require=[])=>({key,id,workshopId,require,path:'D:/mods/'+id+'/42',versionDirectory:'42'});
+test('collection merge retains previous order/sources and adds all internal Mod IDs with prerequisites only once',()=>{
+ const mods=[mod('old-a','A','1'),mod('a','A','2'),mod('b','B','2',['Framework']),mod('fw','Framework','3'),mod('c','C','2')];const result=merge(['old-a'],mods,['2','2','missing'],'42.21');assert.deepEqual(result.selected,['old-a','fw','b','c']);assert.deepEqual(result.added,['Framework','B','C']);assert.deepEqual(result.missing,['missing']);assert.deepEqual(merge(result.selected,mods,['2'],'42.21').selected,result.selected);
+});
+test('package merge respects bundled resources, missing placeholders and reports missing/cyclic prerequisites',()=>{
+ const mods=[mod('a','A','1',['B']),mod('b','B','1',['A']),mod('c','C','1',['Absent'])];const result=merge([],mods,['1'],'42.21');assert.equal(new Set(result.selected).size,3);assert.ok(result.problems.some(p=>p.includes('循环')));assert.ok(result.problems.some(p=>p.includes('Absent')));assert.deepEqual(merge([],mods,['1'],'42.21','D:/package/mods').missing,['1']);assert.deepEqual(merge(['missing:A'],mods,['1'],'42.21','',[{key:'missing:A',id:'A'}]).selected,['a','b','c']);
+});
