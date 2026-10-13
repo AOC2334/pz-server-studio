@@ -1,0 +1,2 @@
+const test=require('node:test'),assert=require('node:assert/strict'),core=require('../lib/core');
+test('declared minimum game version blocks incompatible server packages',()=>{const scan={installs:[{path:'server',gameVersion:'42.21'}],mods:[{key:'one',id:'One',name:'One',path:'D:/mods/One/42',versionDirectory:'42',gameVersionMin:'42.22',require:[],maps:[]}]},config={name:'demo',install:'server',selected:['one'],settings:{}};assert.throws(()=>core.validate(config,scan),/最低版本/);scan.mods[0].gameVersionMin='42.20';assert.equal(core.validate(config,scan).length,1);});
