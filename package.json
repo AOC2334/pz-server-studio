@@ -1,13 +1,27 @@
 {
   "name": "pz-server-studio",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
-    "start": "node --use-env-proxy server.js",
-    "test": "node --test"
+    "start": "node scripts/desktop-run.cjs start",
+    "test": "node --test",
+    "start:web": "node --use-env-proxy server.js",
+    "desktop": "node scripts/desktop-run.cjs start",
+    "pack:win": "node scripts/desktop-run.cjs pack",
+    "dist:win": "node scripts/desktop-run.cjs dist",
+    "test:desktop": "node --test test/desktop.test.js",
+    "verify:desktop": "node scripts/verify-desktop.cjs"
   },
   "engines": {
     "node": ">=24.5"
   },
-  "description": "Windows Project Zomboid Dedicated Server configuration and portable package studio"
+  "description": "Project Zomboid Windows desktop server and mod manager",
+  "main": "desktop/main.cjs",
+  "productName": "PZ Server Studio",
+  "author": "PZ Server Studio",
+  "devDependencies": {
+    "electron": "44.9.0",
+    "electron-builder": "26.15.3",
+    "playwright": "1.61.1"
+  }
 }

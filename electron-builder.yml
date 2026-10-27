@@ -1,0 +1,21 @@
+appId: local.pzserver.studio
+productName: PZ Server Studio
+asar: true
+directories:
+  output: release
+files:
+  - desktop/**
+  - lib/**
+  - public/**
+  - server.js
+  - package.json
+win:
+  icon: desktop/icon.ico
+  artifactName: PZ-Server-Studio-${version}-Windows-${arch}.${ext}
+  target:
+    - target: portable
+      arch: [x64]
+portable:
+  requestExecutionLevel: user
+
+electronDist: node_modules/electron/dist

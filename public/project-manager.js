@@ -10,6 +10,7 @@ function confirmProjectDelete(name){return new Promise(resolve=>{
  const buttons=el('div',undefined,'row'),cancel=el('button','取消'),remove=el('button','确认删除');remove.className='delete-confirm';cancel.onclick=()=>dialog.close('cancel');remove.onclick=()=>dialog.close('delete');buttons.append(cancel,remove);dialog.append(buttons);dialog.onclose=()=>{const confirmed=dialog.returnValue==='delete';dialog.remove();resolve(confirmed);};document.body.append(dialog);dialog.showModal();cancel.focus();
  });}
 function renderProjectList(){
+ renderProjectPicker();
  const list=$('profile-list');list.replaceChildren();if(!projectCatalog?.profiles.length){list.append(el('p','未找到配置文件，可在上方新建配置。','muted'));return;}
  for(const profile of projectCatalog.profiles){
   const name=profile.name,row=el('div',undefined,'profile-row');row.setAttribute('role','listitem');row.tabIndex=0;row.dataset.name=name;
@@ -40,5 +41,18 @@ function bindProjectManager(){
  $('profile').onchange=showProfileDetails;
  $('restore-progress').onclick=()=>{$('profile').value=$('saved-project').value;return $('load').onclick();};
  $('restore-profile').onclick=guard(async()=>{const result=await api('project/manage',{action:'restore',id:$('trash-record').value,newName:$('restore-name').value.trim()||undefined});await refreshProjects(result.name);notice('配置已恢复。');});
- $('new-project').onclick=guard(async()=>{const name=$('manage-name').value.trim();if(!/^[\w-]{1,64}$/.test(name))throw Error('请填写新项目名称');await restoreProject({name,heap:'4',install:$('install').value,paths:$('paths').value,selected:[],settings:{PublicName:'My Zomboid Server',MaxPlayers:'16',DefaultPort:'16261',UDPPort:'16262',PVP:'false',PauseEmpty:'true',Open:'true',Public:'false',Password:'',Map:'Muldraugh, KY'},files:{'.ini':'','_SandboxVars.lua':sandboxSource()?.sandbox.defaultLua||'SandboxVars = { VERSION = 5 }','_spawnregions.lua':'','_spawnpoints.lua':''}});notice('空白项目已创建到面板；点击“保存项目”写入配置目录。');});
+ let creating=false;
+ function creationMode(on){creating=on;$('project-picker').classList.toggle('hidden',on);$('project-name').classList.toggle('hidden',!on);$('cancel-new-project').classList.toggle('hidden',!on);$('new-project').textContent=on?'创建':'新建';if(on){$('project-name').disabled=false;$('project-name').value='';$('project-name').focus();}else{$('project-name').value=$('name').value;updateEditTarget();}}
+ $('cancel-new-project').onclick=()=>creationMode(false);
+ $('project-name').oninput=()=>{};
+ $('project-name').onkeydown=e=>{if(creating&&e.key==='Enter'){e.preventDefault();$('new-project').click();}else if(e.key==='Escape')creationMode(false);};
+ $('project-picker').onchange=guard(async()=>{const value=$('project-picker').value;if(value.startsWith('package:')){const p=await api('packages/load',{id:value.slice(8),paths:$('paths').value.split('\n').map(x=>x.trim()).filter(Boolean)});await restoreProject(p);}else if(value.startsWith('profile:')){$('profile').value=value.slice(8);await $('import').onclick();}renderProjectPicker();});
+ $('new-project').onclick=guard(async()=>{if(!creating){creationMode(true);return;}const name=$('project-name').value.trim();if(!/^[\w-]{1,64}$/.test(name))throw Error('名称须为 1–64 位字母、数字、下划线或连字符');if(projectCatalog.profiles.some(p=>p.name.toLowerCase()===name.toLowerCase())||(serverPackages?.packages||[]).some(p=>p.name.toLowerCase()===name.toLowerCase()))throw Error('名称已存在，请使用其他名称');$('new-project').disabled=true;try{await restoreProject({name,heap:'4',install:$('install').value,paths:$('paths').value,selected:[],settings:{PublicName:'My Zomboid Server',MaxPlayers:'16',DefaultPort:'16261',UDPPort:'16262',PVP:'false',PauseEmpty:'true',Open:'true',Public:'false',Password:'',Map:'Muldraugh, KY'},files:{'.ini':'','_SandboxVars.lua':sandboxSource()?.sandbox.defaultLua||'SandboxVars = { VERSION = 5 }','_spawnregions.lua':'','_spawnpoints.lua':''}});await saveCurrentProject();creationMode(false);renderProjectPicker();notice('已使用默认配置创建并保存 '+name+'，可继续配置并构建服务器包。');}finally{$('new-project').disabled=false;}});
+}
+
+function renderProjectPicker(){
+ const picker=$('project-picker');if(!picker)return;picker.replaceChildren();
+ const placeholder=el('option','请选择服务器包或配置');placeholder.value='';picker.append(placeholder);
+ for(const [label,items,prefix] of [['已构建服务器包',serverPackages?.packages||[],'package:'],['本机配置',projectCatalog?.profiles||[],'profile:']]){if(!items.length)continue;const group=el('optgroup');group.label=label;for(const item of items){const option=el('option',item.name);option.value=prefix+(item.id||item.name);option.title=item.root||item.name;group.append(option);}picker.append(group);}
+ const value=activePackageId?'package:'+activePackageId:'profile:'+$('name').value;if([...picker.options].some(o=>o.value===value))picker.value=value;else picker.value='';
 }

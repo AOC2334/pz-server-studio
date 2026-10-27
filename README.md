@@ -1,16 +1,19 @@
-# PZ Server Studio
+# PZ Server Studio Desktop
 
-Windows 本地可视化服务器制作工具。第一阶段已归档，第二阶段接入创意工坊详情、下载与更新。使用 Node.js 24.5+，不需要 npm install；在线功能需要连接 Steam。
+Windows 桌面版 Project Zomboid 服务器与模组管理工具，基于 Electron，复用本地 Node.js 后端。GitHub 主分支现在维护桌面版源代码。
 
-## 启动
+## 开发与运行
 
-域名白名单在 `lib/network.js` 顶部的 `ALLOWED_DOMAINS` 数组中配置，目前包含 `aoc-applepie.work`。访问地址为 `http://aoc-applepie.work:8080`，域名 DNS 需指向本机可达的 IP 地址；修改白名单后重启应用生效。
+开发环境需要 Node.js 24.5+。首次运行执行 `npm ci`，然后执行 `npm start`，或双击 `start.cmd`。应用打开独立桌面窗口，内置服务仅监听随机的本机回环端口。打包后的应用包含运行时，无需另行安装 Node.js。
 
-双击 `start.cmd`，或在项目目录执行 `npm start`，打开 http://127.0.0.1:8080 。关闭终端停止应用。默认端口在 `server.js` 的 `server.listen(Number(process.env.PORT||8080), ...)` 中修改。也可临时覆盖：PowerShell 执行 `$env:PORT=8081` 后 `npm start`。
+- `npm test`：业务与桌面后端检查。
+- `npm run pack:win`：生成 Windows 解包应用。
+- `npm run dist:win`：生成 Windows 便携 EXE，输出到 `release/`。
+- `npm run start:web`：仅供开发调试的浏览器模式，默认端口 8080；其网络监听设置不影响桌面模式。
 
-应用监听 IPv6 通配地址 `::`，设置 `ipv6Only: false`，同时支持 IPv4 和 IPv6。启动终端打印本机各网卡地址。IPv4 使用 `http://本机IP:8080`；IPv6 使用 `http://[本机IPv6]:8080`，例如本机回环 `http://[::1]:8080`。Host 校验允许本机 IPv4/IPv6 地址、计算机名和 localhost，仍拒绝无关域名。地址变化后自动按当前网卡地址校验。
+桌面结构、数据目录与退出行为见 [桌面版说明](docs/DESKTOP.md)。源码分离说明见 [开发目录迁移](docs/WORKSPACE.md)。
 
-IPv6 局域网测试优先使用 ULA 或全球单播地址；`fe80::` 链路本地地址需要客户端接口作用域，浏览器兼容性有限，且不能用于公网。公网测试需要这台电脑有全球单播 IPv6，客户端也有 IPv6 连通性，并且 Windows 与路由器 IPv6 防火墙放行 TCP 8080；仅修改应用监听无法验证公网可达性。公网访问者能使用当前应用的文件配置和构建功能，当前版本没有独立账号登录或 HTTPS；仅用于受控测试，结束后收回对应公网放行规则。
+## 主要功能
 
 1. 文件与环境：自动扫描注册表、默认 Steam 安装、`libraryfolders.vdf` 多库、108600 游戏与 380870 专用服务器。自定义路径一行一个，可填 Steam 库根或游戏目录。读取用户目录 `Zomboid/Server` 和 `Zomboid/mods`。
 2. 导入现有服务器配置，核对本机缺失模组及多版本选择。工作台按 Mod ID 合并为一张卡片，来源与版本下拉框保留 Steam 工坊、游戏工坊缓存和本地副本。切换已启用模组的来源会替换原选择并保留加载位置，同名但不同 ID 的模组仍分别显示。支持搜索、启停、排序、依赖校验、地图列表加入。B41 / B42 目录都会扫描，但不能仅凭目录判断兼容性，需按模组说明选择与服务器分支一致的版本。
@@ -97,3 +100,8 @@ APPLE 的原始日志明确记录 SkillRecoveryJournal、SkillRecoveryJournalCN�
 旧 data/project.json 不自动覆盖或删除，仍可从下拉框“旧版 data/project.json 进度”恢复，随后点击保存迁入现有配置目录。目录中 __backup__kkdy 是已有的旧备份副本（四份文件时间 2026-10-04 23:39），不是新增的工作台进度；界面标记为“旧备份副本”。新的历史备份放在隐藏子目录，不会再混入游戏配置列表。
 
 配置列表交互（2026-10-05）：主列表仅显示扫描到的配置名称；鼠标悬停或键盘聚焦时显示加载配置、复制、重命名、删除。加载配置导入游戏 INI/Lua；复制自动生成 _copy、_copy_2 等不重名且不超过 64 字符的名称。重命名在行内输入，Enter/保存名称提交，Esc/取消放弃。删除先显示页面内确认弹窗，确认后移入回收区，取消不改动文件。完整进度恢复与回收恢复收纳到“已保存进度与回收区”，不混入主配置列表。
+
+
+## Windows 桌面版（0.2）
+
+新增独立窗口、首页、深浅主题、首次使用引导与操作日志。开发使用 `npm start`，便携 EXE 打包使用 `npm run dist:win`；原浏览器模式改为 `npm run start:web`。迁移、工作空间和退出行为见 [桌面版说明](docs/DESKTOP.md)。旧服务器包和存档不会被打包或自动迁移。
