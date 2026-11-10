@@ -1,0 +1,11 @@
+window.EditorState=(()=>{
+ let baseline=null,loading=false,asking=false;
+ function capture(){if(typeof scan==='undefined'||!scan)return null;return JSON.stringify({name:$('name').value,heap:$('heap').value,install:$('install').value,paths:$('paths').value,target:$('target-version').value,packageId:activePackageId,selected,settings,files,drafts:[...editorDrafts],variants:[...variantChoices],collection:window.WorkshopUI?.savedCollection()});}
+ function dirty(){return baseline!==null&&capture()!==baseline;}
+ function markSaved(value=capture()){baseline=value;refresh();}
+ function refresh(){const target=$('edit-context');if(!target)return;const item=serverPackages?.packages.find(p=>p.id===activePackageId),name=$('name').value||'未命名',root=item?.configRoot||projectCatalog?.root||'等待扫描';target.textContent=(activePackageId?'服务器包':'本机配置')+' · '+name;$('save-location').textContent='保存位置：'+root;const changed=dirty();$('edit-state').textContent=loading?'正在加载':changed?'● 未保存修改':baseline===null?'尚未加载':'✓ 已同步';$('edit-state').classList.toggle('unsaved',changed);$('draft-state').textContent=editorDrafts.size?'含未应用的原文草稿':'';}
+ async function confirmSwitch(){if(loading||asking)return false;if(!dirty())return true;asking=true;try{return await new Promise(resolve=>{const dialog=el('dialog',undefined,'project-delete-dialog');dialog.setAttribute('aria-label','未保存修改');dialog.append(el('h3','当前修改尚未保存'),el('p','切换会丢弃当前面板的修改。可返回工作台保存后再切换。'));const stay=el('button','继续编辑'),discard=el('button','放弃修改并切换');stay.onclick=()=>dialog.close('stay');discard.onclick=()=>dialog.close('discard');dialog.append(stay,discard);dialog.onclose=()=>{const yes=dialog.returnValue==='discard';dialog.remove();resolve(yes);};document.body.append(dialog);dialog.showModal();stay.focus();});}finally{asking=false;}}
+ function initialize(){if(baseline===null)markSaved();}
+ document.addEventListener('input',()=>queueMicrotask(refresh));document.addEventListener('change',()=>queueMicrotask(refresh));window.addEventListener('beforeunload',e=>{if(dirty()){e.preventDefault();e.returnValue='';}});setInterval(refresh,800);
+ return {capture,dirty,markSaved,refresh,initialize,confirmSwitch,setLoading(value){loading=value;refresh();}};
+})();
